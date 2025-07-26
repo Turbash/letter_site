@@ -1,6 +1,8 @@
+
 import { initializeApp } from 'firebase/app';
 import { getStorage } from 'firebase/storage';
-import { getGenerativeModel } from 'firebase/ai';
+import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
+import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -9,10 +11,13 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
-const geminiModel = getGenerativeModel(app, { model: 'gemini-pro' });
+const analytics = getAnalytics(app);
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+const geminiModel = getGenerativeModel(ai, { model: 'gemini-2.5-flash' });
 const storage = getStorage(app);
 
 export { app, geminiModel, storage };

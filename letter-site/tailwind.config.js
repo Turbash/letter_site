@@ -9,6 +9,7 @@ module.exports = {
         greatvibes: ["'Great Vibes'", 'cursive'],
         pacifico: ["'Pacifico'", 'cursive'],
         allura: ["'Allura'", 'cursive'],
+        indie: ["'Indie Flower'", 'cursive'],
       },
     },
   },

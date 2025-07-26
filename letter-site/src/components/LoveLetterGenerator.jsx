@@ -1,99 +1,112 @@
+
+
 import { useState } from 'react';
-import { geminiModel, storage } from '../firebase';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { geminiModel } from '../firebase';
+import LetterDisplay from './LetterDisplay';
+
+function getQueryParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
 
 export default function LoveLetterGenerator() {
-  const [recipient, setRecipient] = useState('');
-  const [tone, setTone] = useState('romantic');
-  const [details, setDetails] = useState('');
-  const [generatedLetter, setGeneratedLetter] = useState('');
+  const [to, setTo] = useState('');
+  const [from, setFrom] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [downloadUrl, setDownloadUrl] = useState('');
+  const [generatedLetter, setGeneratedLetter] = useState('');
+  const [showLetter, setShowLetter] = useState(false);
 
-  const handleGenerateLetter = async () => {
+  async function handleGenerateLetter(e) {
+    e.preventDefault();
     setLoading(true);
+    setError('');
     setGeneratedLetter('');
-    setError('');
-    setDownloadUrl('');
-    const prompt = `Write a heartfelt love letter to ${recipient}. The tone should be ${tone}. Include these specific details or memories: "${details}". Make it sound sincere, personal, and deeply emotional.`;
     try {
+  const prompt = `Write a heartfelt, romantic love letter from ${from} to ${to}. The message to include: "${message}". Make it poetic, authentic, and beautiful. Do NOT include any salutation like 'Dear ...,' or closing like 'Yours, ...' -- only generate the body of the letter.`;
       const result = await geminiModel.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
+      console.log('Gemini API result:', result);
+      let text = result.response.candidates[0].content.parts[0].text.trim();
+      if (!text) {
+        setError('No letter generated (unexpected response format). See console for details.');
+        setLoading(false);
+        return;
+      }
       setGeneratedLetter(text);
+      setShowLetter(true);
     } catch (err) {
-      console.error("Error generating love letter:", err);
-      setError("Failed to generate letter. Please try again. Check Firebase Console for AI Logic usage/errors.");
+      setError('Failed to generate letter. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleSaveLetter = async () => {
-    if (!generatedLetter) return;
-    setLoading(true);
-    setError('');
-    try {
-      const letterRef = ref(storage, `letters/${Date.now()}.txt`);
-      await uploadString(letterRef, generatedLetter, 'raw');
-      const url = await getDownloadURL(letterRef);
-      setDownloadUrl(url);
-    } catch (err) {
-      setError('Failed to save letter.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (showLetter && generatedLetter) {
+    return (
+      <LetterDisplay
+        to={to}
+        from={from}
+        letter={generatedLetter}
+        onEdit={() => {
+          setShowLetter(false);
+          setGeneratedLetter('');
+        }}
+      />
+    );
+  }
 
   return (
-    <div className="max-w-lg mx-auto p-6 bg-white rounded-xl shadow-lg flex flex-col gap-4">
-      <h2 className="text-2xl font-pacifico text-pink-700 mb-2">AI Love Letter Generator</h2>
-      <input
-        className="border p-2 rounded mb-2"
-        placeholder="Recipient's Name"
-        value={recipient}
-        onChange={e => setRecipient(e.target.value)}
-      />
-      <input
-        className="border p-2 rounded mb-2"
-        placeholder="Tone (e.g. romantic, playful)"
-        value={tone}
-        onChange={e => setTone(e.target.value)}
-      />
-      <textarea
-        className="border p-2 rounded mb-2"
-        placeholder="Details or memories to include"
-        value={details}
-        onChange={e => setDetails(e.target.value)}
-      />
-      <button
-        className="bg-pink-600 text-white rounded px-4 py-2 font-pacifico disabled:opacity-50"
-        onClick={handleGenerateLetter}
-        disabled={loading || !recipient || !details}
-      >
-        {loading ? 'Generating...' : 'Generate Letter'}
-      </button>
-      {generatedLetter && (
-        <div className="bg-yellow-50 border border-yellow-300 rounded p-4 mt-2 font-allura whitespace-pre-line">
-          {generatedLetter}
-        </div>
-      )}
-      {generatedLetter && (
+    <div className="container bg-white/95 border-2 border-[#e1b382] rounded-3xl shadow-2xl max-w-[400px] w-[94vw] my-3 mx-auto p-8 sm:p-6 flex flex-col items-center">
+      <form id="letterForm" onSubmit={handleGenerateLetter} className="w-full">
+        <h1 id="mainTitle" className="text-[#b05d5e] mb-6 tracking-wide font-pacifico text-center text-3xl sm:text-4xl" style={{ textShadow: '1px 1px 0 #fffbe7', fontFamily: 'Pacifico, cursive' }}>
+          Love Letter Generator
+        </h1>
+        <label htmlFor="to" className="text-[#b05d5e] font-bold mb-2">To</label>
+        <input
+          type="text"
+          id="to"
+          name="to"
+          placeholder="Their name"
+          required
+          value={to}
+          onChange={e => setTo(e.target.value)}
+          className="w-full p-2 mb-4 border border-[#e1b382] rounded-lg text-base bg-[#f5e6ca] text-[#b05d5e] font-indie box-border focus:outline-none focus:ring-2 focus:ring-pink-200"
+          style={{ fontFamily: 'Indie Flower, cursive' }}
+        />
+        <label htmlFor="message" className="text-[#b05d5e] font-bold mb-2">Message</label>
+        <textarea
+          id="message"
+          name="message"
+          rows={4}
+          placeholder="Your heartfelt message..."
+          required
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          className="w-full p-2 mb-4 border border-[#e1b382] rounded-lg text-base bg-[#f5e6ca] text-[#b05d5e] font-indie box-border focus:outline-none focus:ring-2 focus:ring-pink-200"
+          style={{ fontFamily: 'Indie Flower, cursive' }}
+        />
+        <label htmlFor="from" className="text-[#b05d5e] font-bold mb-2">From</label>
+        <input
+          type="text"
+          id="from"
+          name="from"
+          placeholder="Your name"
+          required
+          value={from}
+          onChange={e => setFrom(e.target.value)}
+          className="w-full p-2 mb-4 border border-[#e1b382] rounded-lg text-base bg-[#f5e6ca] text-[#b05d5e] font-indie box-border focus:outline-none focus:ring-2 focus:ring-pink-200"
+          style={{ fontFamily: 'Indie Flower, cursive' }}
+        />
         <button
-          className="bg-green-600 text-white rounded px-4 py-2 mt-2 font-pacifico"
-          onClick={handleSaveLetter}
+          type="submit"
           disabled={loading}
+          className="w-full py-3 bg-[#b05d5e] text-white rounded-lg text-lg font-pacifico shadow-md transition-colors duration-200 hover:bg-[#7c3a3a] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+          style={{ fontFamily: 'Pacifico, cursive' }}
         >
-          Save & Share
+          {loading ? 'Generating...' : 'Generate Letter'}
         </button>
-      )}
-      {downloadUrl && (
-        <div className="mt-2 text-green-700 break-all">
-          Share this link: <a href={downloadUrl} className="underline text-blue-700" target="_blank" rel="noopener noreferrer">{downloadUrl}</a>
-        </div>
-      )}
-      {error && <div className="text-red-600 mt-2">{error}</div>}
+        {error && <div className="text-red-600 mt-2">{error}</div>}
+      </form>
     </div>
   );
 }
