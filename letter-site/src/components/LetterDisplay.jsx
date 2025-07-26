@@ -1,18 +1,18 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+
 
 function splitMessagePages(message, maxLen = 300) {
   if (!message) return [];
   const pages = [];
-  let i = 0;
-  while (i < message.length) {
-    let chunk = message.slice(i, i + maxLen);
-    if (i + maxLen < message.length) {
-      const lastSpace = chunk.lastIndexOf(' ');
-      if (lastSpace > 50) chunk = chunk.slice(0, lastSpace);
+  let curr = '';
+  for (const part of message.split(/(\s+)/)) {
+    if ((curr + part).length > maxLen && curr.length > 0) {
+      pages.push(curr);
+      curr = '';
     }
-    pages.push(chunk.trim());
-    i += chunk.length;
+    curr += part;
   }
+  if (curr.length > 0) pages.push(curr);
   return pages;
 }
 
@@ -31,45 +31,30 @@ const LetterDisplay = ({ to, from, letter, onEdit }) => {
     else if (dx < -60 && page < pages.length - 1) setPage(page + 1);
     touchStartX.current = null;
   };
-
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowLeft' && page > 0) setPage(page - 1);
     if (e.key === 'ArrowRight' && page < pages.length - 1) setPage(page + 1);
   };
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
-  const overlayBg = isMobile ? {
-    backgroundImage: `url('/11488228.png')`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-  } : {};
-
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-10"
-      style={overlayBg}
+      className="fixed inset-0 flex items-center justify-center z-10 bg-transparent mobile-letter-bg"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
       <div
-        className="relative flex items-center justify-center"
-        style={isMobile
-          ? { width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh', aspectRatio: '9/16' }
-          : { width: 'min(92vw, 420px)', aspectRatio: '9/16', maxHeight: '92vh' }}
+        className="relative flex items-center justify-center letter-content-wrapper"
+        style={{ width: 'min(92vw, 420px)', aspectRatio: '9/16', maxHeight: '92vh' }}
       >
-        {!isMobile && (
-          <img
-            src="/11488228.png"
-            alt="Paper"
-            className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
-            draggable="false"
-            style={{ zIndex: 0 }}
-          />
-        )}
+        <img
+          src="/11488228.png"
+          alt="Paper"
+          className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none desktop-only"
+          draggable="false"
+          style={{ zIndex: 0 }}
+        />
         <div
           className="relative flex flex-col items-center justify-center px-3 sm:px-6 py-4 sm:py-8 text-[#2d1a0d] font-allura w-full h-full overflow-auto"
           style={{ fontFamily: 'Allura, cursive', zIndex: 1 }}
@@ -79,7 +64,7 @@ const LetterDisplay = ({ to, from, letter, onEdit }) => {
               Dear {to},
             </div>
             <div
-              className="whitespace-pre-line mb-2 flex-1 text-center break-words text-[1.1rem] sm:text-[1.4rem] leading-tight max-h-[60%] overflow-hidden break-all font-allura w-full px-6 sm:px-12"
+              className="whitespace-pre-line mb-2 flex-1 text-center break-words text-[1.1rem] sm:text-[1.4rem] leading-tight overflow-hidden break-all font-allura w-full px-6 sm:px-12"
               style={{ fontFamily: 'Allura, cursive', minHeight: '3em', wordBreak: 'break-word' }}
             >
               {pages[page]}

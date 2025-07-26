@@ -1,1 +1,19 @@
+@media (max-width: 450px) {
+	.mobile-letter-bg {
+		background-image: url('/11488228.png');
+		background-size: cover;
+		background-position: center;
+		background-repeat: no-repeat;
+	}
+	.letter-content-wrapper {
+		width: 100vw !important;
+		height: 100vh !important;
+		max-width: 100vw !important;
+		max-height: 100vh !important;
+		aspect-ratio: 9/16 !important;
+	}
+	.desktop-only {
+		display: none !important;
+	}
+}
 @import "tailwindcss";
