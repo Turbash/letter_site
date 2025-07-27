@@ -1,4 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
+import { db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 
 function splitMessagePages(message, maxLen = 300) {
@@ -18,6 +20,9 @@ function splitMessagePages(message, maxLen = 300) {
 
 const LetterDisplay = ({ to, from, letter, onEdit }) => {
   const [page, setPage] = useState(0);
+  const [shareUrl, setShareUrl] = useState(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const [error, setError] = useState(null);
   const pages = splitMessagePages(letter);
   const touchStartX = useRef(null);
 
@@ -34,6 +39,36 @@ const LetterDisplay = ({ to, from, letter, onEdit }) => {
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowLeft' && page > 0) setPage(page - 1);
     if (e.key === 'ArrowRight' && page < pages.length - 1) setPage(page + 1);
+  };
+
+  const handleShare = async () => {
+    setIsSharing(true);
+    setError(null);
+    try {
+      const docRef = await addDoc(collection(db, 'letters'), {
+        to,
+        from,
+        letter,
+        created: serverTimestamp(),
+      });
+      const url = `${window.location.origin}/letter?id=${docRef.id}`;
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `A love letter for ${to}`,
+            text: `Read this beautiful letter!`,
+            url,
+          });
+          setIsSharing(false);
+          return;
+        } catch (err) {
+        }
+      }
+      setShareUrl(url);
+    } catch (err) {
+      setError('Failed to share. Please try again.');
+    }
+    setIsSharing(false);
   };
 
   return (
@@ -73,7 +108,54 @@ const LetterDisplay = ({ to, from, letter, onEdit }) => {
               Yours, {from}
             </div>
           </div>
-          <button onClick={onEdit} className="absolute top-4 right-4 bg-white text-pink-700 border border-yellow-300 rounded px-3 py-1 font-pacifico cursor-pointer text-base">Edit</button>
+          {/* Action Buttons: Back & Share */}
+          <div className="w-full flex flex-row justify-between items-center gap-4 mt-6 px-2 sm:px-6">
+            <button
+              onClick={onEdit}
+              className="flex-1 bg-white text-pink-700 border border-yellow-300 rounded-lg px-4 py-2 font-pacifico shadow hover:bg-yellow-50 transition-all text-base"
+            >
+              Back
+            </button>
+            <button
+              onClick={handleShare}
+              disabled={isSharing}
+              className="flex-1 bg-pink-600 text-white rounded-lg px-4 py-2 font-pacifico shadow hover:bg-pink-700 transition-all text-base disabled:opacity-60"
+            >
+              {isSharing ? 'Sharing...' : 'Share'}
+            </button>
+          </div>
+          {shareUrl && (
+            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+              <div className="bg-white rounded-lg p-6 shadow-xl flex flex-col items-center">
+                <div className="mb-2 text-pink-700 font-pacifico text-lg">Share this letter!</div>
+                <input
+                  className="w-full border rounded px-2 py-1 mb-2 text-center"
+                  value={shareUrl}
+                  readOnly
+                  onFocus={e => e.target.select()}
+                />
+                <div className="flex gap-3 mb-2">
+                  <button
+                    className="bg-green-500 text-white rounded px-3 py-1"
+                    onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareUrl)}`, '_blank')}
+                  >WhatsApp</button>
+                  <button
+                    className="bg-gradient-to-r from-pink-500 to-yellow-500 text-white rounded px-3 py-1"
+                    onClick={() => window.open(`https://www.instagram.com/?url=${encodeURIComponent(shareUrl)}`, '_blank')}
+                  >Instagram</button>
+                  <button
+                    className="bg-blue-500 text-white rounded px-3 py-1"
+                    onClick={() => {navigator.clipboard.writeText(shareUrl)}}
+                  >Copy Link</button>
+                </div>
+                <button
+                  className="text-pink-700 underline mt-1"
+                  onClick={() => setShareUrl(null)}
+                >Close</button>
+              </div>
+            </div>
+          )}
+          {error && <div className="text-red-600 mt-2">{error}</div>}
           {pages.length > 1 && (
             <div className="flex justify-center items-center gap-6 mt-2 w-full">
               <button onClick={() => setPage(page - 1)} disabled={page === 0} className={`text-pink-700 text-xl bg-transparent border-none ${page === 0 ? 'opacity-40 cursor-default' : 'cursor-pointer'}`}>&lt; Prev</button>

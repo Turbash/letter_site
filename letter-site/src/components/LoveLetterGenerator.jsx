@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { geminiModel } from '../firebase';
-import LetterDisplay from './LetterDisplay';
+import { useNavigate } from 'react-router-dom';
+import LetterPage from './LetterPage';
 
 function getQueryParam(name) {
   return new URLSearchParams(window.location.search).get(name);
@@ -16,6 +17,7 @@ export default function LoveLetterGenerator() {
   const [error, setError] = useState('');
   const [generatedLetter, setGeneratedLetter] = useState('');
   const [showLetter, setShowLetter] = useState(false);
+  const navigate = useNavigate();
 
   async function handleGenerateLetter(e) {
     e.preventDefault();
@@ -23,7 +25,7 @@ export default function LoveLetterGenerator() {
     setError('');
     setGeneratedLetter('');
     try {
-  const prompt = `Write a heartfelt, romantic love letter from ${from} to ${to}. The message to include: "${message}". Make it poetic, authentic, and beautiful. Do NOT include any salutation like 'Dear ...,' or closing like 'Yours, ...' -- only generate the body of the letter.`;
+      const prompt = `Write a heartfelt, romantic love letter from ${from} to ${to}. The message to include: "${message}". Make it poetic, authentic, and beautiful. Do NOT include any salutation like 'Dear ...,' or closing like 'Yours, ...' -- only generate the body of the letter.`;
       const result = await geminiModel.generateContent(prompt);
       console.log('Gemini API result:', result);
       let text = result.response.candidates[0].content.parts[0].text.trim();
@@ -42,17 +44,9 @@ export default function LoveLetterGenerator() {
   }
 
   if (showLetter && generatedLetter) {
-    return (
-      <LetterDisplay
-        to={to}
-        from={from}
-        letter={generatedLetter}
-        onEdit={() => {
-          setShowLetter(false);
-          setGeneratedLetter('');
-        }}
-      />
-    );
+    // Instead of rendering LetterDisplay directly, navigate to /letter and pass state
+    navigate('/letter', { state: { to, from, letter: generatedLetter } });
+    return null;
   }
 
   return (
