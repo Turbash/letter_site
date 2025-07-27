@@ -25,7 +25,7 @@ export default function LoveLetterGenerator() {
     setError('');
     setGeneratedLetter('');
     try {
-      const prompt = `Write a heartfelt, romantic love letter from ${from} to ${to}. The message to include: "${message}". Make it poetic, authentic, and beautiful. Do NOT include any salutation like 'Dear ...,' or closing like 'Yours, ...' -- only generate the body of the letter.`;
+  const prompt = `You are an expert at writing deeply emotional, realistic, and human love letters. Write a love letter from ${from} to ${to} that is filled with genuine feeling and warmth. The user has provided this message as inspiration: "${message}". Do NOT include the message text itself in the letter. Instead, use the message to inspire the style, tone, and content of the letter. If the message suggests a particular style (e.g., playful, poetic, passionate, nostalgic), write the letter in that style. If no style is clear, write a poetic, lovely letter. Make the letter feel personal, authentic, and full of emotion. Do NOT include any salutation like 'Dear ...,' or closing like 'Yours, ...' -- only generate the body of the letter.`;
       const result = await geminiModel.generateContent(prompt);
       console.log('Gemini API result:', result);
       let text = result.response.candidates[0].content.parts[0].text.trim();
@@ -44,7 +44,6 @@ export default function LoveLetterGenerator() {
   }
 
   if (showLetter && generatedLetter) {
-    // Instead of rendering LetterDisplay directly, navigate to /letter and pass state
     navigate('/letter', { state: { to, from, letter: generatedLetter } });
     return null;
   }
