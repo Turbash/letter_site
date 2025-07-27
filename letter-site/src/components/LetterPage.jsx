@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import LetterDisplay from './LetterDisplay';
 
 export default function LetterPage() {
-  const [searchParams] = useSearchParams();
+
+  const { id } = useParams();
   const [letterData, setLetterData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const id = searchParams.get('id');
   const location = useLocation();
   const navigate = useNavigate();
-
   const generatedLetter = location.state;
 
   useEffect(() => {

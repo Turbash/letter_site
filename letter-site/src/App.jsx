@@ -13,7 +13,7 @@ export default function App() {
       <HeartsBackground />
       <Routes>
         <Route path="/" element={<LoveLetterGenerator />} />
-        <Route path="/letter" element={<LetterPage />} />
+        <Route path="/letter/:id?" element={<LetterPage />} />
       </Routes>
     </div>
   );
